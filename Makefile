@@ -17,6 +17,6 @@ hash_table_search: hash_table_search.cpp
 	$(CXX) $(CXXFLAGS) -o hash_table_search hash_table_search.cpp
 
 clean:
-	rm -f $(TARGETS) *.csv
+	del /Q $(TARGETS) *.csv 2>nul || true
 
 .PHONY: all clean
