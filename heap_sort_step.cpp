@@ -88,17 +88,16 @@ int main(int argc, char* argv[]) {
     if (argc > 2) start_row = stoi(argv[2]);
     if (argc > 3) end_row = stoi(argv[3]);
 
-    vector<Record> records;
     ifstream infile(input_file);
-
     if (!infile.is_open()) {
         cerr << "Error: Cannot open file " << input_file << endl;
         return 1;
     }
 
+    int total_rows = 0;
     string line;
     bool header = true;
-    int row_num = 0;
+    vector<Record> records;
 
     while (getline(infile, line)) {
         if (header) {
@@ -106,7 +105,9 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        if (row_num >= start_row && (end_row < 0 || row_num <= end_row)) {
+        total_rows++;
+
+        if (total_rows - 1 >= start_row && (end_row < 0 || total_rows - 1 <= end_row)) {
             stringstream ss(line);
             string id_str, name;
             if (getline(ss, id_str, ',') && getline(ss, name)) {
@@ -116,17 +117,11 @@ int main(int argc, char* argv[]) {
                 records.push_back(rec);
             }
         }
-        row_num++;
     }
     infile.close();
 
-    string output_file = "dataset_" + to_string(start_row) + "_heap_sorted_step_"
+    string output_file = "dataset_" + to_string(total_rows) + "_heap_sorted_step_"
                          + to_string(start_row) + "_" + to_string(end_row) + ".txt";
-
-    if (end_row < 0) {
-        output_file = "dataset_" + to_string(records.size()) + "_heap_sorted_step_"
-                      + to_string(start_row) + "_" + to_string(row_num - 1) + ".txt";
-    }
 
     ofstream outfile(output_file);
     if (!outfile.is_open()) {
