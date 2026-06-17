@@ -8,15 +8,16 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
-    // Get number of rows from command line, default to 1000
     int num_rows = 1000;
-    string filename = "dataset.csv";
+    string filename = "";
     
     if (argc > 1) {
         num_rows = stoi(argv[1]);
     }
     if (argc > 2) {
         filename = argv[2];
+    } else {
+        filename = "dataset_" + to_string(num_rows) + ".csv";
     }
     
     // Create seed from "243UC247D5"
