@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     if (argc > 2) {
         output_file = argv[2];
     } else {
-        output_file = "radix_sorted_dataset_" + to_string(records.size()) + ".csv";
+        output_file = "radix_sorted_dataset_" + to_string(records.size()) + ".txt";
     }
 
     ofstream outfile(output_file);

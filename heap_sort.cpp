@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     if (argc > 2) {
         output_file = argv[2];
     } else {
-        output_file = "heap_sort_dataset_" + to_string(sorted_records.size()) + ".csv";
+        output_file = "heap_sort_dataset_" + to_string(sorted_records.size()) + ".txt";
     }
 
     ofstream outfile(output_file);
