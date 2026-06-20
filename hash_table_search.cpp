@@ -6,7 +6,6 @@
 #include <sstream>
 #include <unordered_map>
 #include <iomanip>
-#include <random>
 
 using namespace std;
 
@@ -57,46 +56,45 @@ int main(int argc, char* argv[]) {
 
     infile.close();
 
-    cout << "Loaded " << records.size() << " records." << endl;
+    long long n = records.size();
+    cout << "Loaded " << n << " records." << endl;
     cout << "Starting hash table search analysis..." << endl;
 
-    long long n = records.size();
+    // Use a volatile counter to prevent the compiler from optimizing the loops away
+    volatile int dummy_counter = 0; 
 
-    long long best_case_total = 0;
-    long long avg_case_total = 0;
-    long long worst_case_total = 0;
-
+    // --- BEST CASE: Look up the same known element N times (Hot Cache) ---
+    long long best_target = records[0].id;
     auto start_best = chrono::high_resolution_clock::now();
     for (long long i = 0; i < n; i++) {
-        auto target = records[i].id;
-        if (hashtable.find(target) != hashtable.end()) {
-            continue;
+        if (hashtable.find(best_target) != hashtable.end()) {
+            dummy_counter++;
         }
     }
     auto end_best = chrono::high_resolution_clock::now();
-    best_case_total = chrono::duration_cast<chrono::nanoseconds>(end_best - start_best).count();
+    long long best_case_total = chrono::duration_cast<chrono::nanoseconds>(end_best - start_best).count();
 
+    // --- AVERAGE CASE: Look up all N elements in the table once ---
     auto start_avg = chrono::high_resolution_clock::now();
     for (long long i = 0; i < n; i++) {
-        auto target = records[i].id;
-        hashtable.find(target);
+        if (hashtable.find(records[i].id) != hashtable.end()) {
+            dummy_counter++;
+        }
     }
     auto end_avg = chrono::high_resolution_clock::now();
-    avg_case_total = chrono::duration_cast<chrono::nanoseconds>(end_avg - start_avg).count();
+    long long avg_case_total = chrono::duration_cast<chrono::nanoseconds>(end_avg - start_avg).count();
 
+    // --- WORST CASE: Look up N elements that DO NOT exist ---
+    // (Forces the hash table to check buckets and fail every time)
     auto start_worst = chrono::high_resolution_clock::now();
     for (long long i = 0; i < n; i++) {
-        bool found = false;
-        long long target = 123456789LL;
-        for (const auto& rec : records) {
-            if (rec.id == target) {
-                found = true;
-                break;
-            }
+        // Look up negative numbers that we know aren't in the dataset
+        if (hashtable.find(-(i + 1)) != hashtable.end()) {
+            dummy_counter++;
         }
     }
     auto end_worst = chrono::high_resolution_clock::now();
-    worst_case_total = chrono::duration_cast<chrono::nanoseconds>(end_worst - start_worst).count();
+    long long worst_case_total = chrono::duration_cast<chrono::nanoseconds>(end_worst - start_worst).count();
 
     double best_seconds = best_case_total / 1e9;
     double avg_seconds = avg_case_total / 1e9;
@@ -119,6 +117,7 @@ int main(int argc, char* argv[]) {
 
     cout << "Hash table search analysis completed." << endl;
     cout << "Results written to " << output_file << endl;
+    cout << fixed << setprecision(9);
     cout << "Best case time: " << best_seconds << " seconds" << endl;
     cout << "Average case time: " << avg_seconds << " seconds" << endl;
     cout << "Worst case time: " << worst_seconds << " seconds" << endl;
