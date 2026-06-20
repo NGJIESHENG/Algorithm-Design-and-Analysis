@@ -12,7 +12,8 @@ struct Record {
     string name;
 };
 
-class MaxHeap {
+// Changed from MaxHeap to MinHeap
+class MinHeap {
 private:
     vector<Record> heap;
 
@@ -21,26 +22,29 @@ private:
     int rightChild(int i) { return 2 * i + 2; }
 
     void heapifyDown(int i) {
-        int largest = i;
+        int smallest = i; // Changed 'largest' to 'smallest'
         int left = leftChild(i);
         int right = rightChild(i);
 
-        if (left < (int)heap.size() && heap[left].id > heap[largest].id) {
-            largest = left;
+        // Change: heap[left].id < heap[smallest].id
+        if (left < (int)heap.size() && heap[left].id < heap[smallest].id) {
+            smallest = left;
         }
 
-        if (right < (int)heap.size() && heap[right].id > heap[largest].id) {
-            largest = right;
+        // Change: heap[right].id < heap[smallest].id
+        if (right < (int)heap.size() && heap[right].id < heap[smallest].id) {
+            smallest = right;
         }
 
-        if (largest != i) {
-            swap(heap[i], heap[largest]);
-            heapifyDown(largest);
+        if (smallest != i) {
+            swap(heap[i], heap[smallest]);
+            heapifyDown(smallest);
         }
     }
 
     void heapifyUp(int i) {
-        if (i > 0 && heap[i].id > heap[parent(i)].id) {
+        // Change: heap[i].id < heap[parent(i)].id
+        if (i > 0 && heap[i].id < heap[parent(i)].id) {
             swap(heap[i], heap[parent(i)]);
             heapifyUp(parent(i));
         }
@@ -118,7 +122,8 @@ int main(int argc, char* argv[]) {
 
     auto start = chrono::high_resolution_clock::now();
 
-    MaxHeap heap;
+    // Changed to MinHeap
+    MinHeap heap;
     heap.buildHeap(records);
     vector<Record> sorted_records = heap.heapSort();
 
@@ -147,15 +152,17 @@ int main(int argc, char* argv[]) {
     cout << "Heap Sort completed in " << elapsed.count() << " seconds." << endl;
     cout << "Sorted data written to " << output_file << endl;
 
+    // Change: Check for Ascending Order
     bool is_sorted = true;
     for (size_t i = 1; i < sorted_records.size(); i++) {
-        if (sorted_records[i].id > sorted_records[i-1].id) {
+        if (sorted_records[i].id < sorted_records[i-1].id) { 
             is_sorted = false;
             break;
         }
     }
 
-    cout << "Verification: " << (is_sorted ? "PASSED (correctly sorted in descending order)" : "FAILED (not sorted)") << endl;
+    // Change: Print Ascending verification message
+    cout << "Verification: " << (is_sorted ? "PASSED (correctly sorted in ascending order)" : "FAILED (not sorted)") << endl;
 
     return 0;
 }

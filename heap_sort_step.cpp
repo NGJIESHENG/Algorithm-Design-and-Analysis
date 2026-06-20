@@ -11,7 +11,8 @@ struct Record {
     string name;
 };
 
-class MaxHeap {
+// Changed from MaxHeap to MinHeap
+class MinHeap {
 private:
     vector<Record> heap;
 
@@ -20,21 +21,23 @@ private:
     int rightChild(int i) { return 2 * i + 2; }
 
     void heapifyDown(int i) {
-        int largest = i;
+        int smallest = i; // Changed 'largest' to 'smallest'
         int left = leftChild(i);
         int right = rightChild(i);
 
-        if (left < (int)heap.size() && heap[left].id > heap[largest].id) {
-            largest = left;
+        // Change: heap[left].id < heap[smallest].id
+        if (left < (int)heap.size() && heap[left].id < heap[smallest].id) {
+            smallest = left;
         }
 
-        if (right < (int)heap.size() && heap[right].id > heap[largest].id) {
-            largest = right;
+        // Change: heap[right].id < heap[smallest].id
+        if (right < (int)heap.size() && heap[right].id < heap[smallest].id) {
+            smallest = right;
         }
 
-        if (largest != i) {
-            swap(heap[i], heap[largest]);
-            heapifyDown(largest);
+        if (smallest != i) {
+            swap(heap[i], heap[smallest]);
+            heapifyDown(smallest);
         }
     }
 
@@ -129,7 +132,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    MaxHeap heap;
+    // Changed to MinHeap
+    MinHeap heap;
     heap.buildHeap(records, outfile);
     heap.heapSort(outfile);
 
