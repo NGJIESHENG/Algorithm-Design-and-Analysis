@@ -26,24 +26,42 @@ struct Record {
     string name;
 };
 
-// Custom swap function to avoid <algorithm> library
-void swapRecords(Record& a, Record& b) {
-    Record temp = a;
-    a = b;
-    b = temp;
-}
+// Changed from MaxHeap to MinHeap
+class MinHeap {
+private:
+    vector<Record> heap;
 
-void heapifyDown(Record arr[], int n, int i) {
-    int largest = i;
-    int left = 2 * i + 1;
-    int right = 2 * i + 2;
+    int parent(int i) { return (i - 1) / 2; }
+    int leftChild(int i) { return 2 * i + 1; }
+    int rightChild(int i) { return 2 * i + 2; }
 
-    // Compare 10-digit IDs using '>' for ascending sort
-    if (left < n && arr[left].id > arr[largest].id) {
-        largest = left;
+    void heapifyDown(int i) {
+        int smallest = i; // Changed 'largest' to 'smallest'
+        int left = leftChild(i);
+        int right = rightChild(i);
+
+        // Change: heap[left].id < heap[smallest].id
+        if (left < (int)heap.size() && heap[left].id < heap[smallest].id) {
+            smallest = left;
+        }
+
+        // Change: heap[right].id < heap[smallest].id
+        if (right < (int)heap.size() && heap[right].id < heap[smallest].id) {
+            smallest = right;
+        }
+
+        if (smallest != i) {
+            swap(heap[i], heap[smallest]);
+            heapifyDown(smallest);
+        }
     }
-    if (right < n && arr[right].id > arr[largest].id) {
-        largest = right;
+
+    void heapifyUp(int i) {
+        // Change: heap[i].id < heap[parent(i)].id
+        if (i > 0 && heap[i].id < heap[parent(i)].id) {
+            swap(heap[i], heap[parent(i)]);
+            heapifyUp(parent(i));
+        }
     }
 
     if (largest != i) {
@@ -112,13 +130,19 @@ int main(int argc, char* argv[]) {
     heapSort(arr, n);
     auto end = high_resolution_clock::now();
 
-    duration<double> elapsed = end - start;
+    // Changed to MinHeap
+    MinHeap heap;
+    heap.buildHeap(records);
+    vector<Record> sorted_records = heap.heapSort();
+
+    auto end = chrono::high_resolution_clock::now();
+
+    chrono::duration<double> elapsed = end - start;
 
     if (argc > 2) {
         output_file = argv[2];
     } else {
-        
-        output_file = "heap_sorted_dataset_" + to_string(n) + ".txt";
+        output_file = "heap_sort_dataset_" + to_string(sorted_records.size()) + ".txt";
     }
 
     ofstream outfile(output_file);
@@ -136,15 +160,16 @@ int main(int argc, char* argv[]) {
     cout << "Heap Sort completed in " << elapsed.count() << " seconds." << endl;
     cout << "Sorted data written to " << output_file << endl;
 
+    // Change: Check for Ascending Order
     bool is_sorted = true;
-    for (int i = 1; i < n; i++) {
-        if (arr[i].id < arr[i-1].id) {
+    for (size_t i = 1; i < sorted_records.size(); i++) {
+        if (sorted_records[i].id < sorted_records[i-1].id) { 
             is_sorted = false;
             break;
         }
     }
 
-    // Perfectly matches your screenshot verification text
+    // Change: Print Ascending verification message
     cout << "Verification: " << (is_sorted ? "PASSED (correctly sorted in ascending order)" : "FAILED (not sorted)") << endl;
 
     delete[] arr;

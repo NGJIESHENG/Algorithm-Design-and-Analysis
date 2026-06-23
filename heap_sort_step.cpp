@@ -24,18 +24,34 @@ struct Record {
     string name;
 };
 
-void swapRecords(Record& a, Record& b) {
-    Record temp = a;
-    a = b;
-    b = temp;
-}
+// Changed from MaxHeap to MinHeap
+class MinHeap {
+private:
+    vector<Record> heap;
 
-// Helper function to print the current state of the array
-void printArraySteps(Record arr[], int n, ofstream& outfile) {
-    outfile << "[";
-    for (int i = 0; i < n; i++) {
-        outfile << arr[i].id;
-        if (i < n - 1) outfile << ", ";
+    int parent(int i) { return (i - 1) / 2; }
+    int leftChild(int i) { return 2 * i + 1; }
+    int rightChild(int i) { return 2 * i + 2; }
+
+    void heapifyDown(int i) {
+        int smallest = i; // Changed 'largest' to 'smallest'
+        int left = leftChild(i);
+        int right = rightChild(i);
+
+        // Change: heap[left].id < heap[smallest].id
+        if (left < (int)heap.size() && heap[left].id < heap[smallest].id) {
+            smallest = left;
+        }
+
+        // Change: heap[right].id < heap[smallest].id
+        if (right < (int)heap.size() && heap[right].id < heap[smallest].id) {
+            smallest = right;
+        }
+
+        if (smallest != i) {
+            swap(heap[i], heap[smallest]);
+            heapifyDown(smallest);
+        }
     }
     outfile << "]\n";
 }
@@ -112,15 +128,12 @@ int main(int argc, char* argv[]) {
     Record* arr = new Record[n];
     int index = 0;
 
-    while (getline(infile, line) && index < n) {
-        int delim = line.find(',');
-        if (delim != string::npos) {
-            arr[index].id = stoll(line.substr(0, delim));
-            arr[index].name = line.substr(delim + 1);
-            index++;
-        }
-    }
-    infile.close();
+    // Changed to MinHeap
+    MinHeap heap;
+    heap.buildHeap(records, outfile);
+    heap.heapSort(outfile);
+
+    outfile.close();
 
     cout << "Loaded " << n << " records for Step-By-Step Demo." << endl;
     
