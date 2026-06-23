@@ -1,8 +1,21 @@
+// *********************************************************
+// Program: heap_sort_step.cpp
+// Course: CCP6214 Algorithm Design and Analysis
+// Lecture Class: TC1L
+// Tutorial Class: TT1L
+// Trimester: 2610
+// Member_1: 243UC247C8 | IVAN CHEAH KA JUN | ivan.cheah.ka@student.mmu.edu.my | 0102187449
+// Member_2: 243UC247D5 | NG JIE SHENG | ng.jie.sheng@student.mmu.edu.my | 01110890315
+// Member_3: 243UC247BY | PAN HAN CHENG | pan.han.cheng@student.mmu.edu.my | 0166137037
+// *********************************************************
+// Task Distribution
+// Member_1:Hash Table Search 
+// Member_2:Dataset Generator, Heap Sort 
+// Member_3:Radix Sort
+// *********************************************************
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <string>
-#include <sstream>
 
 using namespace std;
 
@@ -40,97 +53,80 @@ private:
             heapifyDown(smallest);
         }
     }
+    outfile << "]\n";
+}
 
-public:
-    void buildHeap(vector<Record>& records, ofstream& out) {
-        heap = records;
+void heapifyDown(Record arr[], int n, int i) {
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
 
-        printRecords(out, heap);
-        out << " initial" << endl;
-
-        for (int i = heap.size() / 2 - 1; i >= 0; i--) {
-            heapifyDown(i);
-        }
+    if (left < n && arr[left].id > arr[largest].id) {
+        largest = left;
+    }
+    if (right < n && arr[right].id > arr[largest].id) {
+        largest = right;
     }
 
-    void heapSort(ofstream& out) {
-        int counter = heap.size();
-        while (!heap.empty()) {
-            swap(heap[0], heap[heap.size() - 1]);
-            heap.pop_back();
-            counter--;
-
-            if (!heap.empty()) {
-                heapifyDown(0);
-            }
-
-            printRecords(out, heap);
-            out << " i = " << counter << endl;
-        }
+    if (largest != i) {
+        swapRecords(arr[i], arr[largest]);
+        heapifyDown(arr, n, largest);
     }
+}
 
-    void printRecords(ofstream& out, const vector<Record>& records) {
-        out << "[";
-        for (size_t i = 0; i < records.size(); i++) {
-            out << records[i].id << "/" << records[i].name;
-            if (i < records.size() - 1) out << ", ";
-        }
-        out << "]";
+void heapSortDemo(Record arr[], int n, string output_file) {
+    ofstream outfile(output_file);
+    
+    outfile << "--- INITIAL UNSORTED ARRAY ---\n";
+    printArraySteps(arr, n, outfile);
+
+    // Phase 1: Build the Maxheap
+    for (int i = n / 2 - 1; i >= 0; i--) {
+        heapifyDown(arr, n, i);
     }
-};
+    
+    outfile << "\n--- ARRAY AFTER BUILDING MAXHEAP ---\n";
+    printArraySteps(arr, n, outfile);
+    
+    outfile << "\n--- EXTRACTION PHASE (SWAPPING MAX TO BACK) ---\n";
+    // Phase 2: Extract elements one by one from the heap
+    for (int i = n - 1; i > 0; i--) {
+        swapRecords(arr[0], arr[i]); 
+        heapifyDown(arr, i, 0);      
+        
+        outfile << "Step " << (n - i) << " (Size " << i << " remaining): ";
+        printArraySteps(arr, n, outfile);
+    }
+    
+    outfile << "\n--- FINAL SORTED ARRAY ---\n";
+    printArraySteps(arr, n, outfile);
+    outfile.close();
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        cerr << "Usage: " << argv[0] << " <input_csv> [start_row] [end_row]" << endl;
+        cerr << "Usage: " << argv[0] << " <input_csv_small_dataset>" << endl;
         return 1;
     }
 
     string input_file = argv[1];
-    int start_row = 0, end_row = -1;
-
-    if (argc > 2) start_row = stoi(argv[2]);
-    if (argc > 3) end_row = stoi(argv[3]);
-
     ifstream infile(input_file);
     if (!infile.is_open()) {
         cerr << "Error: Cannot open file " << input_file << endl;
         return 1;
     }
 
-    int total_rows = 0;
+    int n = 0;
     string line;
-    bool header = true;
-    vector<Record> records;
-
     while (getline(infile, line)) {
-        if (header) {
-            header = false;
-            continue;
-        }
-
-        total_rows++;
-
-        if (total_rows - 1 >= start_row && (end_row < 0 || total_rows - 1 <= end_row)) {
-            stringstream ss(line);
-            string id_str, name;
-            if (getline(ss, id_str, ',') && getline(ss, name)) {
-                Record rec;
-                rec.id = stoll(id_str);
-                rec.name = name;
-                records.push_back(rec);
-            }
-        }
+        if (!line.empty()) n++;
     }
-    infile.close();
 
-    string output_file = "dataset_" + to_string(total_rows) + "_heap_sorted_step_"
-                         + to_string(start_row) + "_" + to_string(end_row) + ".txt";
+    infile.clear();
+    infile.seekg(0, ios::beg);
 
-    ofstream outfile(output_file);
-    if (!outfile.is_open()) {
-        cerr << "Error: Cannot open output file" << endl;
-        return 1;
-    }
+    Record* arr = new Record[n];
+    int index = 0;
 
     // Changed to MinHeap
     MinHeap heap;
@@ -139,7 +135,14 @@ int main(int argc, char* argv[]) {
 
     outfile.close();
 
-    cout << "Heap sort steps written to " << output_file << endl;
+    cout << "Loaded " << n << " records for Step-By-Step Demo." << endl;
+    
+    string output_file = "heap_sort_steps_" + to_string(n) + ".txt";
+    
+    heapSortDemo(arr, n, output_file);
+    
+    cout << "Step-by-step documentation written to " << output_file << endl;
 
+    delete[] arr;
     return 0;
 }
