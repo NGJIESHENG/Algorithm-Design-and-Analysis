@@ -1,9 +1,26 @@
+// *********************************************************
+// Program: dataset_generator.cpp
+// Course: CCP6214 Algorithm Design and Analysis
+// Lecture Class: TC1L
+// Tutorial Class: TT1L
+// Trimester: 2610
+// Member_1: 243UC247C8 | IVAN CHEAH KA JUN | ivan.cheah.ka@student.mmu.edu.my | 0102187449
+// Member_2: 243UC247D5 | NG JIE SHENG | ng.jie.sheng@student.mmu.edu.my | 01110890315
+// Member_3: 243UC247BY | PAN HAN CHENG | pan.han.cheng@student.mmu.edu.my | 0166137037
+// *********************************************************
+// Task Distribution
+// Member_1:Hash Table Search 
+// Member_2:Dataset Generator, Heap Sort 
+// Member_3:Radix Sort
+// *********************************************************
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <random>
+#include <chrono> // Added for timing
 
 using namespace std;
+using namespace std::chrono; 
 
 // Custom Hash Set to avoid using banned standard libraries
 struct HashNode {
@@ -49,8 +66,8 @@ int main(int argc, char* argv[]) {
     
     string filename = "dataset_" + to_string(num_rows) + ".csv";
     
-    // Seed generation based on assignment rules
-    string leader_id = "243UC247CT"; // Replace with actual leader ID
+    // Seed generation
+    string leader_id = "243UC247D5"; 
     string seed_str = "";
     for (char c : leader_id) {
         if (isdigit(c)) {
@@ -59,6 +76,9 @@ int main(int argc, char* argv[]) {
             seed_str += to_string((toupper(c) - 'A' + 1) % 10);
         }
     }
+    
+    
+    auto start_time = high_resolution_clock::now();
     
     unsigned int seed = stoul(seed_str);
     mt19937_64 generator(seed);
@@ -82,6 +102,13 @@ int main(int argc, char* argv[]) {
     }
     
     file.close();
+    
+    // Stop the timer
+    auto stop_time = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop_time - start_time);
+    
     cout << "Generated " << num_rows << " records in " << filename << endl;
+    cout << "Dataset Generation Runtime: " << duration.count() / 1000000.0 << " seconds" << endl;
+    
     return 0;
 }

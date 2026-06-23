@@ -1,80 +1,72 @@
+// *********************************************************
+// Program: heap_sort.cpp
+// Course: CCP6214 Algorithm Design and Analysis
+// Lecture Class: TC1L
+// Tutorial Class: TT1L
+// Trimester: 2610
+// Member_1: 243UC247C8 | IVAN CHEAH KA JUN | ivan.cheah.ka@student.mmu.edu.my | 0102187449
+// Member_2: 243UC247D5 | NG JIE SHENG | ng.jie.sheng@student.mmu.edu.my | 01110890315
+// Member_3: 243UC247BY | PAN HAN CHENG | pan.han.cheng@student.mmu.edu.my | 0166137037
+// *********************************************************
+// Task Distribution
+// Member_1:Hash Table Search 
+// Member_2:Dataset Generator, Heap Sort 
+// Member_3:Radix Sort
+// *********************************************************
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <string>
-#include <chrono>
-#include <sstream>
+#include <chrono> 
 
 using namespace std;
+using namespace std::chrono;
 
 struct Record {
     long long id;
     string name;
 };
 
-class MaxHeap {
-private:
-    vector<Record> heap;
+// Custom swap function to avoid <algorithm> library
+void swapRecords(Record& a, Record& b) {
+    Record temp = a;
+    a = b;
+    b = temp;
+}
 
-    int parent(int i) { return (i - 1) / 2; }
-    int leftChild(int i) { return 2 * i + 1; }
-    int rightChild(int i) { return 2 * i + 2; }
+void heapifyDown(Record arr[], int n, int i) {
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
 
-    void heapifyDown(int i) {
-        int largest = i;
-        int left = leftChild(i);
-        int right = rightChild(i);
-
-        if (left < (int)heap.size() && heap[left].id > heap[largest].id) {
-            largest = left;
-        }
-
-        if (right < (int)heap.size() && heap[right].id > heap[largest].id) {
-            largest = right;
-        }
-
-        if (largest != i) {
-            swap(heap[i], heap[largest]);
-            heapifyDown(largest);
-        }
+    // Compare 10-digit IDs using '>' for ascending sort
+    if (left < n && arr[left].id > arr[largest].id) {
+        largest = left;
+    }
+    if (right < n && arr[right].id > arr[largest].id) {
+        largest = right;
     }
 
-    void heapifyUp(int i) {
-        if (i > 0 && heap[i].id > heap[parent(i)].id) {
-            swap(heap[i], heap[parent(i)]);
-            heapifyUp(parent(i));
-        }
+    if (largest != i) {
+        swapRecords(arr[i], arr[largest]);
+        heapifyDown(arr, n, largest);
     }
+}
 
-public:
-    void buildHeap(vector<Record>& records) {
-        heap = records;
-        for (int i = heap.size() / 2 - 1; i >= 0; i--) {
-            heapifyDown(i);
-        }
+void heapSort(Record arr[], int n) {
+    // Phase 1: Build the Maxheap
+    for (int i = n / 2 - 1; i >= 0; i--) {
+        heapifyDown(arr, n, i);
     }
-
-    vector<Record> heapSort() {
-        vector<Record> sorted;
-
-        while (!heap.empty()) {
-            sorted.push_back(heap[0]);
-
-            heap[0] = heap[heap.size() - 1];
-            heap.pop_back();
-
-            if (!heap.empty()) {
-                heapifyDown(0);
-            }
-        }
-
-        return sorted;
+    // Phase 2: Extract elements one by one from the heap
+    for (int i = n - 1; i > 0; i--) {
+        swapRecords(arr[0], arr[i]); 
+        heapifyDown(arr, i, 0);      
     }
-};
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        cerr << "Usage: " << argv[0] << " <input_csv> [output_csv]" << endl;
+        cerr << "Usage: " << argv[0] << " <input_csv>" << endl;
         return 1;
     }
 
@@ -83,64 +75,61 @@ int main(int argc, char* argv[]) {
 
     cout << "Reading data from " << input_file << "..." << endl;
 
-    vector<Record> records;
     ifstream infile(input_file);
-
     if (!infile.is_open()) {
         cerr << "Error: Cannot open file " << input_file << endl;
         return 1;
     }
 
+    // Pass 1: Count exact rows
+    int n = 0;
     string line;
-    bool header = true;
-
     while (getline(infile, line)) {
-        if (header) {
-            header = false;
-            continue;
-        }
-
-        stringstream ss(line);
-        string id_str, name;
-
-        if (getline(ss, id_str, ',') && getline(ss, name)) {
-            Record rec;
-            rec.id = stoll(id_str);
-            rec.name = name;
-            records.push_back(rec);
-        }
+        if (!line.empty()) n++;
     }
 
+    infile.clear();
+    infile.seekg(0, ios::beg);
+
+    // Pass 2: Dynamically allocate the raw array
+    Record* arr = new Record[n];
+    int index = 0;
+
+    while (getline(infile, line) && index < n) {
+        int delim = line.find(',');
+        if (delim != string::npos) {
+            arr[index].id = stoll(line.substr(0, delim));
+            arr[index].name = line.substr(delim + 1);
+            index++;
+        }
+    }
     infile.close();
 
-    cout << "Loaded " << records.size() << " records." << endl;
+    cout << "Loaded " << n << " records." << endl;
     cout << "Starting Heap Sort..." << endl;
 
-    auto start = chrono::high_resolution_clock::now();
+    auto start = high_resolution_clock::now();
+    heapSort(arr, n);
+    auto end = high_resolution_clock::now();
 
-    MaxHeap heap;
-    heap.buildHeap(records);
-    vector<Record> sorted_records = heap.heapSort();
-
-    auto end = chrono::high_resolution_clock::now();
-
-    chrono::duration<double> elapsed = end - start;
+    duration<double> elapsed = end - start;
 
     if (argc > 2) {
         output_file = argv[2];
     } else {
-        output_file = "heap_sort_dataset_" + to_string(sorted_records.size()) + ".csv";
+        
+        output_file = "heap_sorted_dataset_" + to_string(n) + ".txt";
     }
 
     ofstream outfile(output_file);
     if (!outfile.is_open()) {
         cerr << "Error: Cannot open file " << output_file << " for writing." << endl;
+        delete[] arr;
         return 1;
     }
 
-    outfile << "ID,NAME" << endl;
-    for (const auto& rec : sorted_records) {
-        outfile << rec.id << "," << rec.name << endl;
+    for (int i = 0; i < n; i++) {
+        outfile << arr[i].id << "," << arr[i].name << "\n";
     }
     outfile.close();
 
@@ -148,14 +137,16 @@ int main(int argc, char* argv[]) {
     cout << "Sorted data written to " << output_file << endl;
 
     bool is_sorted = true;
-    for (size_t i = 1; i < sorted_records.size(); i++) {
-        if (sorted_records[i].id > sorted_records[i-1].id) {
+    for (int i = 1; i < n; i++) {
+        if (arr[i].id < arr[i-1].id) {
             is_sorted = false;
             break;
         }
     }
 
-    cout << "Verification: " << (is_sorted ? "PASSED (correctly sorted in descending order)" : "FAILED (not sorted)") << endl;
+    // Perfectly matches your screenshot verification text
+    cout << "Verification: " << (is_sorted ? "PASSED (correctly sorted in ascending order)" : "FAILED (not sorted)") << endl;
 
+    delete[] arr;
     return 0;
 }
