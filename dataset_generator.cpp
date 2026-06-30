@@ -61,65 +61,43 @@ public:
 };
 
 int main(int argc, char* argv[]) {
-    long long num_rows = 1000;
-    string filename = "";
+    int num_rows = 1000;
+    if (argc > 1) num_rows = stoi(argv[1]);
     
-    if (argc > 1) {
-        num_rows = stoll(argv[1]);
-    }
-    if (argc > 2) {
-        filename = argv[2];
-    } else {
-        filename = "dataset_" + to_string(num_rows) + ".csv";
-    }
+    string filename = "dataset_" + to_string(num_rows) + ".csv";
     
-    unsigned long seed = 0;
-    string seed_str = "243UC247D5";
-    for (char c : seed_str) {
-        seed = seed * 31 + (unsigned char)c;
+    // Seed generation
+    string leader_id = "243UC247D5"; 
+    string seed_str = "";
+    for (char c : leader_id) {
+        if (isdigit(c)) {
+            seed_str += c;
+        } else if (isalpha(c)) {
+            seed_str += to_string((toupper(c) - 'A' + 1) % 10);
+        }
     }
     
     
-    mt19937 generator(seed);
-    uniform_int_distribution<long long> int_dist(1000000000LL, 9999999999LL); 
-    uniform_int_distribution<int> char_dist(0, 25); 
+    auto start_time = high_resolution_clock::now();
     
-    set<long long> used_numbers; 
+    unsigned int seed = stoul(seed_str);
+    mt19937_64 generator(seed);
+    uniform_int_distribution<long long> int_dist(1000000000LL, 9999999999LL);
+    uniform_int_distribution<int> char_dist(0, 25);
     
     CustomHashSet used_numbers(num_rows * 2); 
     ofstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Error: Cannot open file " << filename << " for writing." << endl;
-        return 1;
-    }
     
-    file << "ID,NAME" << endl;
-    
-    long long generated = 0;
-    long long attempts = 0;
-    long long max_attempts = num_rows * 100; 
-    
-    while (generated < num_rows && attempts < max_attempts) {
+    int generated = 0;
+    while (generated < num_rows) {
         long long random_id = int_dist(generator);
-        
-        if (used_numbers.find(random_id) != used_numbers.end()) {
-            attempts++;
-            continue;
-        }
-        
-        used_numbers.insert(random_id);
-        
-        string random_str = "";
-        for (int i = 0; i < 5; i++) {
-            random_str += (char)('a' + char_dist(generator));
-        }
-        
-        file << random_id << "," << random_str << endl;
-        generated++;
-        attempts++;
-        
-        if (generated % 10000 == 0) {
-            cout << "Generated " << generated << " records..." << endl;
+        if (used_numbers.insert(random_id)) {
+            string random_str = "";
+            for (int i = 0; i < 5; i++) {
+                random_str += (char)('a' + char_dist(generator));
+            }
+            file << random_id << "," << random_str << "\n";
+            generated++;
         }
     }
     
