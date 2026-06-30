@@ -87,6 +87,8 @@ int main(int argc, char* argv[]) {
     
     CustomHashSet used_numbers(num_rows * 2); 
     ofstream file(filename);
+
+    file << "ID,NAME\n";
     
     int generated = 0;
     while (generated < num_rows) {

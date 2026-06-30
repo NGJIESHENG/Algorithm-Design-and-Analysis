@@ -13,10 +13,11 @@
 // Member_2:Dataset Generator, Heap Sort 
 // Member_3:Radix Sort
 // *********************************************************
+
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <chrono> 
+#include <chrono>
 
 using namespace std;
 using namespace std::chrono;
@@ -26,42 +27,27 @@ struct Record {
     string name;
 };
 
-// Changed from MaxHeap to MinHeap
-class MinHeap {
-private:
-    vector<Record> heap;
+// Custom swap function to avoid <algorithm> library overhead
+void swapRecords(Record& a, Record& b) {
+    Record temp = a;
+    a = b;
+    b = temp;
+}
 
-    int parent(int i) { return (i - 1) / 2; }
-    int leftChild(int i) { return 2 * i + 1; }
-    int rightChild(int i) { return 2 * i + 2; }
+// Maintains the max-heap property
+void heapifyDown(Record arr[], int n, int i) {
+    int largest = i;
+    int left = 2 * i + 1;
+    int right = 2 * i + 2;
 
-    void heapifyDown(int i) {
-        int smallest = i; // Changed 'largest' to 'smallest'
-        int left = leftChild(i);
-        int right = rightChild(i);
-
-        // Change: heap[left].id < heap[smallest].id
-        if (left < (int)heap.size() && heap[left].id < heap[smallest].id) {
-            smallest = left;
-        }
-
-        // Change: heap[right].id < heap[smallest].id
-        if (right < (int)heap.size() && heap[right].id < heap[smallest].id) {
-            smallest = right;
-        }
-
-        if (smallest != i) {
-            swap(heap[i], heap[smallest]);
-            heapifyDown(smallest);
-        }
+    // Compare 10-digit IDs using '>' to build a max-heap 
+    // (which ultimately extracts into ascending order)
+    if (left < n && arr[left].id > arr[largest].id) {
+        largest = left;
     }
 
-    void heapifyUp(int i) {
-        // Change: heap[i].id < heap[parent(i)].id
-        if (i > 0 && heap[i].id < heap[parent(i)].id) {
-            swap(heap[i], heap[parent(i)]);
-            heapifyUp(parent(i));
-        }
+    if (right < n && arr[right].id > arr[largest].id) {
+        largest = right;
     }
 
     if (largest != i) {
@@ -70,21 +56,25 @@ private:
     }
 }
 
+// Core Heap Sort logic
 void heapSort(Record arr[], int n) {
     // Phase 1: Build the Maxheap
     for (int i = n / 2 - 1; i >= 0; i--) {
         heapifyDown(arr, n, i);
     }
+
     // Phase 2: Extract elements one by one from the heap
     for (int i = n - 1; i > 0; i--) {
-        swapRecords(arr[0], arr[i]); 
-        heapifyDown(arr, i, 0);      
+        // Move the maximum element to the back of the array
+        swapRecords(arr[0], arr[i]);
+        // Call heapify on the reduced heap
+        heapifyDown(arr, i, 0);
     }
 }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        cerr << "Usage: " << argv[0] << " <input_csv>" << endl;
+        cerr << "Usage: " << argv[0] << " <input_csv> [output_file]" << endl;
         return 1;
     }
 
@@ -99,19 +89,27 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Pass 1: Count exact rows
+    // --- PASS 1: Count exact rows ---
     int n = 0;
     string line;
+    
+    // SKIP THE HEADER LINE
+    getline(infile, line); 
+
     while (getline(infile, line)) {
         if (!line.empty()) n++;
     }
-
+    
+    // Reset file pointer back to the beginning for the second pass
     infile.clear();
     infile.seekg(0, ios::beg);
 
-    // Pass 2: Dynamically allocate the raw array
+    // --- PASS 2: Dynamically allocate the raw array and load data ---
     Record* arr = new Record[n];
     int index = 0;
+    
+    // SKIP THE HEADER LINE AGAIN
+    getline(infile, line); 
 
     while (getline(infile, line) && index < n) {
         int delim = line.find(',');
@@ -121,28 +119,27 @@ int main(int argc, char* argv[]) {
             index++;
         }
     }
+    
     infile.close();
 
     cout << "Loaded " << n << " records." << endl;
     cout << "Starting Heap Sort..." << endl;
 
+    // Start Timer
     auto start = high_resolution_clock::now();
+    
+    // Execute Sort
     heapSort(arr, n);
+    
+    // End Timer
     auto end = high_resolution_clock::now();
-
-    // Changed to MinHeap
-    MinHeap heap;
-    heap.buildHeap(records);
-    vector<Record> sorted_records = heap.heapSort();
-
-    auto end = chrono::high_resolution_clock::now();
-
-    chrono::duration<double> elapsed = end - start;
+    duration<double> elapsed = end - start;
 
     if (argc > 2) {
         output_file = argv[2];
     } else {
-        output_file = "heap_sort_dataset_" + to_string(sorted_records.size()) + ".txt";
+        // CHANGED: output file extension is now .txt instead of .csv
+        output_file = "heap_sorted_dataset_" + to_string(n) + ".txt";
     }
 
     ofstream outfile(output_file);
@@ -152,6 +149,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Write the header into the sorted file
+    outfile << "ID,NAME\n";
     for (int i = 0; i < n; i++) {
         outfile << arr[i].id << "," << arr[i].name << "\n";
     }
@@ -160,18 +159,20 @@ int main(int argc, char* argv[]) {
     cout << "Heap Sort completed in " << elapsed.count() << " seconds." << endl;
     cout << "Sorted data written to " << output_file << endl;
 
-    // Change: Check for Ascending Order
+    // Check for Ascending Order
     bool is_sorted = true;
-    for (size_t i = 1; i < sorted_records.size(); i++) {
-        if (sorted_records[i].id < sorted_records[i-1].id) { 
+    for (int i = 1; i < n; i++) {
+        if (arr[i].id < arr[i-1].id) { 
             is_sorted = false;
             break;
         }
     }
 
-    // Change: Print Ascending verification message
+    // Print Ascending verification message
     cout << "Verification: " << (is_sorted ? "PASSED (correctly sorted in ascending order)" : "FAILED (not sorted)") << endl;
 
+    // Free dynamically allocated memory
     delete[] arr;
+    
     return 0;
 }
